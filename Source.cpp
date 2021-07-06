@@ -6,73 +6,6 @@
 #include<cmath>
 using namespace std;
 
-/*
-Operations:
-shift right
-rotate right
-xor
-normal addition
-
-Functions:
-o0(x) -> sigma (lower case) zero
-	for a word X do the following:
-		rotate right 7
-		rotete right 18
-		shift right 3
-		Then take the XOR of these three words
-
-o1(x) -> sigma (lower case) one
-	for a word X do the following:
-		rotate right 17
-		rotate right 19
-		shift right 10
-		Then take the XOR of these three words
-
-E0(x) -> sigma (upper case) zero
-	for a word X do the following:
-		rotate right 2
-		rotate right 13
-		rotate right 22
-		then take the XOR of these three words
-
-E1(x) -> sigma (upper case) one
-	for a word X do the following:
-		rotate right 6
-		rotate right 11
-		rotate right 25
-		then take the XOR of these three words
-
-Choice function:
-choice(x,y,z):
-	if x bit is 1:
-		take y bit
-	else
-		take z bit
-
-Majority function:
-	majority(x,y,z): takes the bit that repeated most
-
-*/
-
-//string convertToBinary(string number, int precision) {
-//	string binary = "";
-//	int integerPart = number;
-//	double fractionPart = number - integerPart;
-//	while (integerPart != 0) {
-//		binary.push_back((integerPart % 2) + '0');
-//		integerPart /= 2;
-//	}
-//	reverse(binary.begin(), binary.end());
-//	binary.push_back('.');
-//	int countPrecision = 0,tempInteger;
-//	while (countPrecision != precision) {
-//		tempInteger = fractionPart * 2;
-//		binary.push_back(tempInteger + '0');
-//		fractionPart = (fractionPart * 2) - int(fractionPart * 2);
-//		countPrecision++;
-//	}
-//	return binary;
-//}
 
 int* convertStringToLongInteger(string str) {
 	int length = str.size(), count = 0;
@@ -87,8 +20,8 @@ int* convertStringToLongInteger(string str) {
 	return arr;
 }
 
-void constants(string* arr) {
-	int prime = 2, countPrime = 0;
+void constants(unsigned int* arr) {
+	int prime = 2, countPrime = 0, count32Digits = 0;
 	while (countPrime != 64) {
 		for (int i = 2; i <= (prime / 2)+1; i++) {
 			if (prime % i == 0) {
@@ -102,10 +35,12 @@ void constants(string* arr) {
 		
 		double cube = pow(prime, 1 / 3.0);
 		cube = cube - (int)cube;
-		int count32Digits = 0;
+		count32Digits = 0;
+		arr[countPrime] = 0;
 		while (count32Digits != 32) {
+			arr[countPrime] <<= 1;
 			cube *= 2;
-			arr[countPrime].push_back((int)cube + '0');
+			arr[countPrime] |= (int)cube;
 			cube = cube - (int)cube;
 			count32Digits++;
 		}
@@ -115,102 +50,121 @@ void constants(string* arr) {
 }
 
 
-const unsigned int a = 0x6A09E667, b = 0xBB67AE85, c = 0x3C6EF372, d = 0xA54FF53A, e = 0x510E527F, f = 0x9B05688C, g = 0x1F83D9AB, h = 0x5BE0CD19;
+unsigned int finalDigest[8] = {	    0x6A09E667,  0xBB67AE85,  0x3C6EF372,  0xA54FF53A,  0x510E527F, 0x9B05688C, 0x1F83D9AB,  0x5BE0CD19 };
+unsigned int tempCompression[8] = { 0x6A09E667,  0xBB67AE85,  0x3C6EF372,  0xA54FF53A,  0x510E527F, 0x9B05688C, 0x1F83D9AB,  0x5BE0CD19 };
 
-
-string sigma0Lower(string x) {
-	string a, b, c;
+unsigned int sigma0Lower(unsigned int x) {
+	unsigned int a, b, c;
 	a = x; b = x; c = x;
-	rotate(a.begin(), a.begin() + a.size() - 7, a.end()), rotate(b.begin(), b.begin() + b.size() - 18, b.end());
-	for (int i = 0; i < 3; i++)
-		for (int j = 31; j > 3; j--)
-			c[j] = c[j - 1];
-	for (int i = 2; i >= 0; i--)
-		c[i] = '0';
-	for (int i = 0; i < 32; i++)
-		x[i] = a[i] ^ b[i] ^ c[i];
+	a = (a >> 7) | (a << 25);
+	b = (b >> 18) | (b << 14);
+	c = c >> 3;
+	x = a ^ b ^ c;
 	return x;
 }
-string sigma1Lower(string x) {
-	string a, b, c;
+unsigned int sigma1Lower(unsigned int x) {
+	unsigned int a, b, c;
 	a = x; b = x; c = x;
-	rotate(a.begin(), a.begin() + a.size() - 17, a.end()), rotate(b.begin(), b.begin() + b.size() - 19, b.end());
-	for (int i = 0; i < 10; i++)
-		for (int j = 31; j > 3; j--)
-			c[j] = c[j - 1];
-	for (int i = 9; i >= 0; i--)
-		c[i] = '0';
-	for (int i = 0; i < 32; i++)
-		x[i] = a[i] ^ b[i] ^ c[i];
+	a = (a >> 17) | (a << 15);
+	b = (b >> 19) | (b << 13);
+	c = c >> 10;
+	x = a ^ b ^ c;
 	return x;
 }
-string sigma0Upper(string x) {
-	string a, b, c;
+unsigned int sigma0Upper(unsigned int x) {
+	unsigned int a, b, c;
 	a = x; b = x; c = x;
-	rotate(a.begin(), a.begin() + a.size() - 2, a.end()), rotate(b.begin(), b.begin() + b.size() - 13, b.end());
-	rotate(c.begin(), c.begin() + c.size() - 22, c.end());
-	for (int i = 0; i < 32; i++)
-		x[i] = a[i] ^ b[i] ^ c[i];
+	a = (a >> 2) | (a << 30);
+	b = (b >> 13) | (b << 19);
+	c = (c >> 22) | (c << 10);
+	x = a ^ b ^ c;
 	return x;
 }
-string sigma1Upper(string x) {
-	string a, b, c;
+unsigned int sigma1Upper(unsigned int x) {
+	unsigned int a, b, c;
 	a = x; b = x; c = x;
-	rotate(a.begin(), a.begin() + a.size() - 6, a.end()), rotate(b.begin(), b.begin() + b.size() - 11, b.end());
-	rotate(c.begin(), c.begin() + c.size() - 25, c.end());
-	for (int i = 0; i < 32; i++)
-		x[i] = a[i] ^ b[i] ^ c[i];
+	a = (a >> 6) | (a << 26);
+	b = (b >> 11) | (b << 21);
+	c = (c >> 25) | (c << 7);
+	x = a ^ b ^ c;
 	return x;
 }
-string schedule(string _2, string _7, string _15, string _16) {
-	string output;
-	//_2 = sigma1Lower(_2);
-	//_15 = sigma0Lower(_15);
-	for (int i = 0; i < 32; i++)
-		output.push_back(_2[i] + _7[i] + _15[i] + _16[i] % 2 !=0 ? '1' : '0');
+unsigned int schedule(unsigned int _2, unsigned int _7, unsigned int _15, unsigned int _16) {
+	unsigned int output;
+	_2 = sigma1Lower(_2);
+	_15 = sigma0Lower(_15);
+	output = _2 + _7 + _15 + _16;
 	return output;
 }
-string choice(string x, string y, string z) {
-	string output = "";
+unsigned int choice(unsigned int x, unsigned int y, unsigned int z) {
+	unsigned int output = 0;
 	for (int i = 0; i < 32; i++) {
-		if (x[i] == '1')
-			output.push_back(y[i]);
+		output <<= 1;
+		
+		if (x & 0x80000000)
+			output |= ((y & 0x80000000) >> 31);
 		else
-			output.push_back(z[i]);
+			output |= ((z & 0x80000000) >> 31);
+		x <<= 1;	y <<= 1;	z <<= 1;
 	}
 	return output;
 }
-string majority(string x, string y, string z) {
-	return "";
+unsigned int majority(unsigned int x, unsigned int y, unsigned int z) {
+	unsigned int output = 0;
+	int bit;
+	for (int i = 0; i < 32; i++) {
+		output <<= 1;
+		bit = ((x & 0x80000000) >> 31) + ((y & 0x80000000) >> 31) + ((z & 0x80000000) >> 31);
+		if (bit == 2 || bit == 3)
+			output |= 0x1;
+		else
+			output |= 0x0;
+
+		x <<= 1;	y <<= 1;	z <<= 1;
+	}
+	return output;
 }
-
-
-string t1(string kn, string wn) {
-	string E = sigma1Upper(e);
-	string ch = choice(e, f, g);
-	return "";
+unsigned int t1(unsigned int kn, unsigned int wn) {
+	unsigned int E = sigma1Upper(finalDigest[4]);
+	unsigned int ch = choice(finalDigest[4], finalDigest[5], finalDigest[6]);
+	unsigned int output = (E + ch + finalDigest[7] + kn + wn);
+	return output;
+}
+unsigned int t2() {
+	unsigned int A = sigma0Upper(finalDigest[0]);
+	unsigned int maj = majority(finalDigest[0], finalDigest[1], finalDigest[2]);
+	unsigned int output = A + maj;
+	return output;
 }
 
 
 void main() {
-	string test = schedule("01111101101010000110010000000101", "10000000001100011001100001111111", "00110010011001100011110001011011", "01111111101101001100011011100010");
-	cout << test << endl;
-	exit(9);
-	unsigned long long int messageSize, tempMessageSize, currentBlock = 0;
-	string constantArr[64], message;
+	//unsigned int x = 4294967295,y=1;
+	//unsigned int z;
+	//z = x + y;
+	//cout << z << endl;
+	//cout << hex<<sigma1Lower(0x00000018) << endl;
+	//exit(8);
+	unsigned long long int messageSize, tempMessageSize;
+	unsigned int constantArr[64];
+	int currentBlock = 0;
+	string message;
 	string* blocks;
 	//Initialize the 64 constants
 	constants(constantArr);
 	cin >> message;
 	messageSize = message.length();
-	tempMessageSize = messageSize;
+	cout << "Message size : " << messageSize << endl;
+	tempMessageSize = messageSize*8;
+	cout << "Temp message size: " << tempMessageSize << endl;
 	//Setting number of blocks
-	unsigned int numberOfBlocks = message.length() % 64 < 56 ? message.length() / 64 + 1 : message.length() / 64 + 2;
+	unsigned int numberOfBlocks = message.length() % 64 < 56 ? ((message.length() / 64) + 1) : ((message.length() / 64) + 2);
+	cout << "Number of blocks: " << numberOfBlocks << endl;
 	blocks = new string[numberOfBlocks];
 	//Initializing blocks
 	for (int i = 0; i < numberOfBlocks; i++)
 		blocks[i] = "";
-	auto messageSchedule = new string[numberOfBlocks][64];
+	auto messageSchedule = new unsigned int[numberOfBlocks][64];
 	//Separate message from the padding by adding 0x1 after the message
 	message.push_back(0x80);
 	//Padding zeroes
@@ -226,47 +180,20 @@ void main() {
 	}
 	// Adding the length of the message at the end of the message
 	for (int i = 0; i < 8; i++) {
-		unsigned char temp = (tempMessageSize & 0xff00000000000000) >> 56;
+		unsigned char temp = ((tempMessageSize & (0xff00000000000000)) >> 56);
 		message.push_back(temp);
-		tempMessageSize = tempMessageSize << 8;
+		tempMessageSize <<= 8;
 	}
-	////Padding
-	//for (int i = 0, j = 0; i < numberOfBlocks; i++, j += 64) {
-	//	if (messageSize / 64 == 0 && messageSize < 56) {
-	//		//Append message
-	//		blocks[i].append(message);
-	//		
-	//		blocks[i].push_back(0x80);
-	//		//Fill the rest of the block with zeroes until it reaches 56 bytes
-	//		for (int j = messageSize + 1; j < 56; j++)
-	//			blocks[i].push_back(0x00);
-	//		tempMessageSize = messageSize;
-	//		//Append the size of the original message to the end of the block (last 8 bytes)
-	//		for (int i = 0; i < 8; i++) {
-	//			unsigned char temp = (tempMessageSize & 0xff00000000000000) >> 56;
-	//			cout << "First byte: " << hex << int(temp) << endl;
-	//			blocks[0].push_back(temp);
-	//			tempMessageSize = tempMessageSize << 8;
-	//		}
-	//	}
-	//	else if (messageSize / 64 == 0 && messageSize > 56) {
-	//		//Append message
-	//		blocks[i].append(message);
-	//		//Separate message from the padding by adding 0x1 after the message
-	//		blocks[i].push_back(0x80);
-	//		//Fill the rest of the block with zeroes until it reaches 56 bytes
-	//		for (int j = messageSize + 1; j < 56; j++)
-	//			blocks[i].push_back(0x00);
-	//		tempMessageSize = messageSize;
-	//		//Append the size of the original message to the end of the block (last 8 bytes)
-	//		for (int i = 0; i < 8; i++) {
-	//			unsigned char temp = (tempMessageSize & 0xff00000000000000) >> 56;
-	//			cout << "First byte: " << hex << int(temp) << endl;
-	//			blocks[0].push_back(temp);
-	//			tempMessageSize = tempMessageSize << 8;
-	//		}
-	//	}
-	//}
+	cout << dec << endl;
+	for (int i = 0; i < 64; i++) {
+		unsigned char temp = message[i];
+		for (int j = 0; j < 8; j++) {
+			cout << int((temp & 0x80) >> 7);
+			temp <<= 1;
+		}
+	}
+
+	cout << endl;
 
 	//Dividing message into blocks
 	// i variable for the number of blocks while j is the variable for bytes inside one block
@@ -275,13 +202,26 @@ void main() {
 		for (int k = 0; k < 64; j++, k++)
 			blocks[i].push_back(message[j]);
 	}
+	cout << "Blocks: \n";
+	for (int i = 0; i < numberOfBlocks; i++)
+		cout << blocks[i];
+	cout << endl;
+	cout << "Blocks of i: " << endl;
 
-	//mesage schedule
+	cout <<dec<<unsigned int((unsigned char) blocks[0][3] )<< endl;
+
+	//mesage schedule and converting messsage schedules into unsigned integers;
 	while (currentBlock != numberOfBlocks) {
-		for (int i = 0, j = 0; i < 16; i++)
-			for (int k = 0; k < 32; k++, j++)
-				messageSchedule[currentBlock][i].push_back(blocks[currentBlock][j]);
-
+		//Adding the 46 bytes in each block
+		for (int i = 0, j = 0; i < 16; i++) {
+			messageSchedule[currentBlock][i] = 0;
+			for (int k = 0; k < 4; k++, j++) {
+				// Packing 4 characters in one unsigned integer
+				messageSchedule[currentBlock][i] <<= 8;
+				messageSchedule[currentBlock][i] |= (unsigned int((unsigned char)blocks[currentBlock][j]));
+			}
+		}
+		// Filling the rest of the message schedule with 48 extra bytes
 		for (int i = 16; i < 64; i++)
 			messageSchedule[currentBlock][i] = schedule(messageSchedule[currentBlock][i - 2],
 				messageSchedule[currentBlock][i - 7],
@@ -289,28 +229,37 @@ void main() {
 				messageSchedule[currentBlock][i - 16]);
 		currentBlock++;
 	}
+
+	cout << "Message schedule: \n";
+	cout << hex << endl;
+	for (int i = 0; i < numberOfBlocks; i++)
+		for (int j = 0; j < 64; j++)
+			cout << messageSchedule[i][j] << endl;
+	cout << endl;
+
+
 	currentBlock = 0;
 	//Compression
+	unsigned int T1, T2;
 	while (currentBlock != numberOfBlocks) {
-
-	}
-
-
-
-	cout << hex;
-	int tempsize = blocks[0].length() * 8;
-	int* arr = new int[tempsize];
-	// j variable loops through the 512 bits, while i variable loops through the 64 bytes, and k variable loops through the 8 bits of a single byte
-	for (int i = 63, j = tempsize - 1,k; i >= 0; i--) {
-		unsigned char temp = blocks[0][i];
-		for (k = 0; k < 8; k++, j--) {
-			arr[j] = temp & 0x1;
-			temp = temp >> 1;
+		for (int i = 0; i < 64; i++) {
+			T1 = t1(constantArr[i], messageSchedule[currentBlock][i]);
+			T2 = t2();
+			for (int j = 7; j > 0; j--) {
+				finalDigest[j] = finalDigest[j - 1];
+			}
+			finalDigest[0] = T1 + T2;
+			finalDigest[4] += T1;
 		}
+		for (int i = 0; i < 8; i++) {
+			finalDigest[i] += tempCompression[i];
+			tempCompression[i] = finalDigest[i];
+		}
+		currentBlock++;
 	}
-	for (int i = 0;i<tempsize;i++)
-		cout << arr[i];
-	exit(8);
 
-
+	cout << hex<< endl << endl;
+	for (int i = 0; i < 8; i++)
+		cout << finalDigest[i];
+	cout << endl;
 }

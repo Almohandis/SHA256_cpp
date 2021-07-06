@@ -1,6 +1,8 @@
 ﻿  Source.cpp
-D:\Visual studio projects\Hashing\hash\hash\Source.cpp(203,13): warning C4326: return type of 'main' should be 'int' instead of 'void'
-D:\Visual studio projects\Hashing\hash\hash\Source.cpp(219,20): warning C4018: '<': signed/unsigned mismatch
-D:\Visual studio projects\Hashing\hash\hash\Source.cpp(223,20): warning C4309: 'argument': truncation of constant value
-D:\Visual studio projects\Hashing\hash\hash\Source.cpp(281,24): warning C4018: '<': signed/unsigned mismatch
+D:\Visual studio projects\Hashing\hash\hash\Source.cpp(141,13): warning C4326: return type of 'main' should be 'int' instead of 'void'
+D:\Visual studio projects\Hashing\hash\hash\Source.cpp(165,20): warning C4018: '<': signed/unsigned mismatch
+D:\Visual studio projects\Hashing\hash\hash\Source.cpp(169,20): warning C4309: 'argument': truncation of constant value
+D:\Visual studio projects\Hashing\hash\hash\Source.cpp(200,24): warning C4018: '<': signed/unsigned mismatch
+D:\Visual studio projects\Hashing\hash\hash\Source.cpp(206,20): warning C4018: '<': signed/unsigned mismatch
+D:\Visual studio projects\Hashing\hash\hash\Source.cpp(235,20): warning C4018: '<': signed/unsigned mismatch
   hash.vcxproj -> D:\Visual studio projects\Hashing\hash\Debug\hash.exe
