@@ -1,11 +1,5 @@
-#include<bitset>
-#include<algorithm>
 #include<iostream>
-#include<Bits.h>
-#include<iomanip>
-#include<cmath>
 using namespace std;
-
 
 int* convertStringToLongInteger(string str) {
 	int length = str.size(), count = 0;
@@ -137,14 +131,7 @@ unsigned int t2() {
 	return output;
 }
 
-
 void main() {
-	//unsigned int x = 4294967295,y=1;
-	//unsigned int z;
-	//z = x + y;
-	//cout << z << endl;
-	//cout << hex<<sigma1Lower(0x00000018) << endl;
-	//exit(8);
 	unsigned long long int messageSize, tempMessageSize;
 	unsigned int constantArr[64];
 	int currentBlock = 0;
@@ -154,16 +141,11 @@ void main() {
 	constants(constantArr);
 	cin >> message;
 	messageSize = message.length();
-	cout << "Message size : " << messageSize << endl;
 	tempMessageSize = messageSize*8;
-	cout << "Temp message size: " << tempMessageSize << endl;
 	//Setting number of blocks
 	unsigned int numberOfBlocks = message.length() % 64 < 56 ? ((message.length() / 64) + 1) : ((message.length() / 64) + 2);
-	cout << "Number of blocks: " << numberOfBlocks << endl;
 	blocks = new string[numberOfBlocks];
-	//Initializing blocks
-	for (int i = 0; i < numberOfBlocks; i++)
-		blocks[i] = "";
+	//Setting message schedule size
 	auto messageSchedule = new unsigned int[numberOfBlocks][64];
 	//Separate message from the padding by adding 0x1 after the message
 	message.push_back(0x80);
@@ -184,16 +166,6 @@ void main() {
 		message.push_back(temp);
 		tempMessageSize <<= 8;
 	}
-	cout << dec << endl;
-	for (int i = 0; i < 64; i++) {
-		unsigned char temp = message[i];
-		for (int j = 0; j < 8; j++) {
-			cout << int((temp & 0x80) >> 7);
-			temp <<= 1;
-		}
-	}
-
-	cout << endl;
 
 	//Dividing message into blocks
 	// i variable for the number of blocks while j is the variable for bytes inside one block
@@ -202,13 +174,6 @@ void main() {
 		for (int k = 0; k < 64; j++, k++)
 			blocks[i].push_back(message[j]);
 	}
-	cout << "Blocks: \n";
-	for (int i = 0; i < numberOfBlocks; i++)
-		cout << blocks[i];
-	cout << endl;
-	cout << "Blocks of i: " << endl;
-
-	cout <<dec<<unsigned int((unsigned char) blocks[0][3] )<< endl;
 
 	//mesage schedule and converting messsage schedules into unsigned integers;
 	while (currentBlock != numberOfBlocks) {
@@ -229,14 +194,6 @@ void main() {
 				messageSchedule[currentBlock][i - 16]);
 		currentBlock++;
 	}
-
-	cout << "Message schedule: \n";
-	cout << hex << endl;
-	for (int i = 0; i < numberOfBlocks; i++)
-		for (int j = 0; j < 64; j++)
-			cout << messageSchedule[i][j] << endl;
-	cout << endl;
-
 
 	currentBlock = 0;
 	//Compression
