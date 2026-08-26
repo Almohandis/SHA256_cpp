@@ -1,51 +1,28 @@
-#include<iostream>
+#include <iostream>
+#include <iomanip>
+#include <vector>
+#include <conio.h>
+
+#include <stdlib.h>
+#include "mysql_connection.h"
+#include <cppconn/driver.h>
+#include <cppconn/exception.h>
+#include <cppconn/prepared_statement.h>
+
+
+
 using namespace std;
 
-int* convertStringToLongInteger(string str) {
-	int length = str.size(), count = 0;
-	int* arr = new int[length];
-	while (count != length) {
-		if (str[count] != '.')
-			arr[count] = str[count] + '0';
-		else
-			arr[count] = -1;
-		count++;
-	}
-	return arr;
-}
-
-void constants(unsigned int* arr) {
-	int prime = 2, countPrime = 0, count32Digits = 0;
-	while (countPrime != 64) {
-		for (int i = 2; i <= (prime / 2)+1; i++) {
-			if (prime % i == 0) {
-				if (countPrime == 0)
-					break;
-				prime++;
-				i = 2;
-				continue;
-			}
-		}
-		
-		double cube = pow(prime, 1 / 3.0);
-		cube = cube - (int)cube;
-		count32Digits = 0;
-		arr[countPrime] = 0;
-		while (count32Digits != 32) {
-			arr[countPrime] <<= 1;
-			cube *= 2;
-			arr[countPrime] |= (int)cube;
-			cube = cube - (int)cube;
-			count32Digits++;
-		}
-		prime++;
-		countPrime++;
-	}
-}
-
-
-unsigned int finalDigest[8] = {	    0x6A09E667,  0xBB67AE85,  0x3C6EF372,  0xA54FF53A,  0x510E527F, 0x9B05688C, 0x1F83D9AB,  0x5BE0CD19 };
+unsigned int finalDigest[8] = { 0x6A09E667,  0xBB67AE85,  0x3C6EF372,  0xA54FF53A,  0x510E527F, 0x9B05688C, 0x1F83D9AB,  0x5BE0CD19 };
 unsigned int tempCompression[8] = { 0x6A09E667,  0xBB67AE85,  0x3C6EF372,  0xA54FF53A,  0x510E527F, 0x9B05688C, 0x1F83D9AB,  0x5BE0CD19 };
+unsigned int constantArr[64] = { 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+									0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+									0xe49b69c1, 0xefbe4786, 0xfc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+									0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x6ca6351, 0x14292967,
+									0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+									0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+									0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+									0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
 
 unsigned int sigma0Lower(unsigned int x) {
 	unsigned int a, b, c;
@@ -94,7 +71,7 @@ unsigned int choice(unsigned int x, unsigned int y, unsigned int z) {
 	unsigned int output = 0;
 	for (int i = 0; i < 32; i++) {
 		output <<= 1;
-		
+
 		if (x & 0x80000000)
 			output |= ((y & 0x80000000) >> 31);
 		else
@@ -130,49 +107,154 @@ unsigned int t2() {
 	unsigned int output = A + maj;
 	return output;
 }
+void pad1(vector<bool>& bits) {
+	bits.push_back(1);
+}
+void pad0s(vector<bool>& bits, int i) {
+	for (int j = 0; j < i; j++) {
+		bits.push_back(0);
+	}
+}
+void padMessageSize(vector<bool>& bits, unsigned long long int messageSize) {
+	for (int i = 0; i < 64; i++) {
+		bits.push_back(messageSize & 0x8000000000000000);
+		messageSize <<= 1;
+	}
+}
+
+void connectToMySQL() {
+	// id, seed (initial), s1, s2, s3, s4, s5, s6, s7, s8, digest (final), d1, d2, d3, d4, d5, d6, d7, d8
+	// derived: s1, s2, s3, s4, s5, s6, s7, s8, d1, d2, d3, d4, d5, d6, d7, d8, 
+
+	string server = "tcp://127.0.0.1:3306";
+	string username = "root";
+	string password = "";
+
+	sql::Driver* driver;
+	sql::Connection* con;
+	sql::Statement* stmt;
+	sql::PreparedStatement* pstmt;
+
+	try
+	{
+		driver = get_driver_instance();
+		con = driver->connect(server, username, password);
+		cout << "Connected successfully" << endl;
+	}
+	catch (sql::SQLException e)
+	{
+		cout << "Could not connect to server. Error message: " << e.what() << endl;
+		system("pause");
+		exit(1);
+	}
+
+	//please create database "quickstartdb" ahead of time
+	con->setSchema("quickstartdb");
+
+	stmt = con->createStatement();
+	stmt->execute("DROP TABLE IF EXISTS inventory");
+	cout << "Finished dropping table (if existed)" << endl;
+	stmt->execute("CREATE TABLE inventory (id serial PRIMARY KEY, name VARCHAR(50), quantity INTEGER);");
+	cout << "Finished creating table" << endl;
+	delete stmt;
+
+	pstmt = con->prepareStatement("INSERT INTO inventory(name, quantity) VALUES(?,?)");
+	pstmt->setString(1, "banana");
+	pstmt->setInt(2, 157);
+	pstmt->execute();
+	cout << "One row inserted." << endl;
+
+	pstmt->setString(1, "orange");
+	pstmt->setInt(2, 154);
+	pstmt->execute();
+	cout << "One row inserted." << endl;
+
+	pstmt->setString(1, "apple");
+	pstmt->setInt(2, 100);
+	pstmt->execute();
+	cout << "One row inserted." << endl;
+
+	delete pstmt;
+	delete con;
+}
 
 void main() {
-	unsigned long long int messageSize, tempMessageSize;
-	unsigned int constantArr[64];
+	//connectToMySQL();
+	unsigned long long int messageSize;
 	int currentBlock = 0;
 	string message;
-	string* blocks;
-	//Initialize the 64 constants
-	constants(constantArr);
-	cin >> message;
-	messageSize = message.length();
-	tempMessageSize = messageSize*8;
+	char choice;
+
+	vector<bool> bits;
+	cout << "Enter chars or whole message? [c/m]: ";
+	cin >> choice;
+	if (choice=='c') {
+		char ch;
+		while (true) {
+			ch = _getch();
+			if (ch == '#') break;
+			cout << ch;
+			message += ch;
+		}
+	} else {
+		cout << "Please enter the entire message: ";
+		cin >> message;
+	}
+	cout << "Message size: " << message.size() << endl;
+
+	for (char c : message) {
+		if (c == '1') {
+			bits.push_back(1);
+		}
+		else {
+			bits.push_back(0);
+		}
+	}
+	messageSize = choice == 'c' ? bits.size() : 0;
 	//Setting number of blocks
-	unsigned int numberOfBlocks = message.length() % 64 < 56 ? ((message.length() / 64) + 1) : ((message.length() / 64) + 2);
-	blocks = new string[numberOfBlocks];
+	unsigned int numberOfBlocks = choice == 'c' ? bits.size() % 512 < 448 ? ((bits.size() / 512) + 1) : ((bits.size() / 512) + 2) : 1;
+
+	vector<vector<bool>> bitsBlocks(numberOfBlocks, vector<bool>(512));
+
 	//Setting message schedule size
 	auto messageSchedule = new unsigned int[numberOfBlocks][64];
-	//Separate message from the padding by adding 0x1 after the message
-	message.push_back(0x80);
-	//Padding zeroes
-	if (messageSize %64 <56) {
-		for (int i = messageSize % 64 + 1 /*for the 1 added*/; i < 56; i++)
-			message.push_back(0x00);
+	//Separate message from the padding by adding binary 1 after the message
+	if (choice == 'c') {
+		pad1(bits);
+		//Padding zeroes
+		if (messageSize % 512 < 448) {
+			pad0s(bits, (448 - (messageSize % 512 + 1)));
+		}
+		else {
+			// pad current block first
+			pad0s(bits, (512 - (messageSize % 512 + 1)));
+			// pad 448 bits from next block
+			pad0s(bits, 448);
+		}
+		// Adding the length of the message at the end of the message
+		padMessageSize(bits, messageSize);
+	} 
+	//else {
+	//	pad0s(bits, 1); // not in procedure
+	//}
+
+	cout << "Final bits[] size: " << bits.size() << endl;
+	cout << "numberOfBlocks: " << numberOfBlocks << endl;
+
+	cout << "bits[] content: " << endl;
+	for (bool b : bits) {
+		cout << b;
 	}
-	else {
-		for (int i = messageSize % 64 + 1; i < 64; i++)
-			message.push_back(0x00);
-		for (int i = 1; i < 56; i++)
-			message.push_back(0x00);
-	}
-	// Adding the length of the message at the end of the message
-	for (int i = 0; i < 8; i++) {
-		unsigned char temp = ((tempMessageSize & (0xff00000000000000)) >> 56);
-		message.push_back(temp);
-		tempMessageSize <<= 8;
-	}
+	cout << endl << endl;
+
 
 	//Dividing message into blocks
 	// i variable for the number of blocks while j is the variable for bytes inside one block
-	for (int i = 0,j=0; i < numberOfBlocks; i++) {
+	for (int i = 0, j = 0; i < numberOfBlocks; i++) {
 		// k variable is for setting bytes in each block
-		for (int k = 0; k < 64; j++, k++)
-			blocks[i].push_back(message[j]);
+		for (int k = 0; k < 512; j++, k++) {
+			bitsBlocks[i][k] = bits[j];
+		}
 	}
 
 	//mesage schedule and converting messsage schedules into unsigned integers;
@@ -180,20 +262,21 @@ void main() {
 		//Adding the 46 bytes in each block
 		for (int i = 0, j = 0; i < 16; i++) {
 			messageSchedule[currentBlock][i] = 0;
-			for (int k = 0; k < 4; k++, j++) {
-				// Packing 4 characters in one unsigned integer
-				messageSchedule[currentBlock][i] <<= 8;
-				messageSchedule[currentBlock][i] |= (unsigned int((unsigned char)blocks[currentBlock][j]));
+			for (int k = 0; k < 32; k++, j++) {
+				messageSchedule[currentBlock][i] <<= 1;
+				messageSchedule[currentBlock][i] |= bitsBlocks[currentBlock][j];
 			}
 		}
 		// Filling the rest of the message schedule with 48 extra bytes
-		for (int i = 16; i < 64; i++)
+		for (int i = 16; i < 64; i++) {
 			messageSchedule[currentBlock][i] = schedule(messageSchedule[currentBlock][i - 2],
 				messageSchedule[currentBlock][i - 7],
 				messageSchedule[currentBlock][i - 15],
 				messageSchedule[currentBlock][i - 16]);
+		}
 		currentBlock++;
 	}
+
 
 	currentBlock = 0;
 	//Compression
@@ -215,8 +298,16 @@ void main() {
 		currentBlock++;
 	}
 
-	cout << hex<< endl << endl;
+	cout << hex << endl << endl;
 	for (int i = 0; i < 8; i++)
-		cout << finalDigest[i];
-	cout << endl;
+		cout << setw(8) << setfill('0') << finalDigest[i];
+	cout << endl << endl;
+
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < 32; j++) {
+			bool k = 0x80000000 & finalDigest[i];
+			cout << k;
+			finalDigest[i] <<= 1;
+		}
+	}
 }
